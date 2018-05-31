@@ -11,11 +11,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    //hides all elements except for main driver element
     ui->data_enter->setHidden(true);
     ui->data_table->setVisible(false);
-    ui->Phone_edit->setInputMask("(999)999-9999");
     ui->search_widget->setHidden(true);
     ui->load_prompt->setHidden(true);
+    //forces phone input to be digits
+    ui->Phone_edit->setInputMask("(999)999-9999");
 }
 
 MainWindow::~MainWindow()
@@ -36,6 +38,7 @@ bool MainWindow::check_text(QString text)
     return true;
 }
 
+//individually checks every form to make sure text exists inside
 bool MainWindow::check_valid()
 {
     QString text;
@@ -77,6 +80,7 @@ bool MainWindow::check_valid()
     return true;
 }
 
+//stores all data if all forms are filled
 void MainWindow::line_get()
 {
     if (check_valid())
@@ -87,7 +91,7 @@ void MainWindow::line_get()
         QString address = ui->Address_edit->text();
         QString email = ui->Email_edit->text();
         QString web = ui->Web_edit->text();
-        int last = data.size() -1;
+        int last = data.size() -1; //selects the last object that was pushed on the vector
         data[last].name = name;
         data[last].phone_number = phone;
         data[last].address = address;
@@ -106,9 +110,8 @@ void MainWindow::line_get()
 
 void MainWindow::data_submit()
 {
-    static int line_num = 0;
-    line_num++;
     line_get();
+    view_data();
 }
 void MainWindow::data_exit()
 {
@@ -138,6 +141,8 @@ void MainWindow::data_search()
     {
         if (data[i].name == ui->search_name->text())
         {
+            //resets table if the name is found
+            //also places the name as first on the list
             name_found = true;
             ui->search_status->setStyleSheet("QLabel { color : black; }");
             ui->search_status->setText("Name found!");
@@ -158,6 +163,7 @@ void MainWindow::data_search()
     }
 }
 
+//parses lines given into the vector
 void MainWindow::add_data(QString line)
 {
     int pos = 0;
@@ -166,6 +172,7 @@ void MainWindow::add_data(QString line)
     int last = data.size() -1;
     for (int i = 0; i < line.size(); i++)
     {
+        //adds characters until ; is reached, then flushes the buffer and starts adding to the next entry
         if (!(line.at(i) == ";"))
         {
             buffer += line.at(i);
@@ -202,12 +209,15 @@ void MainWindow::add_data(QString line)
 
 void MainWindow::data_load()
 {
+    //opens the file explorer
     QString filename = QFileDialog::getOpenFileName(this,
                                             tr("Open File"), "/home/", tr("Text Files(*.txt)"));
     QFile data_txt(filename);
     if (!data_txt.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         qDebug("Can not open file");
+        ui->load_status->setStyleSheet("QLabel { color : red; }");
+        ui->load_status->setText("Load Failed");
     }
     else
     {
@@ -217,6 +227,10 @@ void MainWindow::data_load()
             QString line = in.readLine();
             add_data(line);
         }
+        ui->load_prompt->setHidden(true);
+        ui->load_status->setStyleSheet("QLabel { color : black; }");
+        ui->load_status->setText("Load Successful!");
+        view_data();
     }
     data_txt.close();
 }
@@ -229,12 +243,17 @@ void MainWindow::data_save()
     if(!data_txt.open(QIODevice::WriteOnly | QIODevice::Text))
     {
         qDebug("Can not open file");
+        ui->load_status->setStyleSheet("QLabel { color : red; }");
+        ui->load_status->setText("Save failed");
     }
     else
     {
         QTextStream out(&data_txt);
         for (unsigned long i = 0; i < data.size(); i++)
         {
+            //data is saved in lines wich each line being an entry
+            //stored as:
+            //name;phone;address;email;website
             out << data[i].name << ";";
             out << data[i].phone_number << ";";
             out << data[i].address << ";";
@@ -242,6 +261,8 @@ void MainWindow::data_save()
             out << data[i].website << ";";
             out << "\n";
         }
+        ui->load_status->setStyleSheet("QLabel { color : black; }");
+        ui->load_status->setText("Save Successful!");
     }
     data_txt.close();
 
